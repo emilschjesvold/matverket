@@ -1,0 +1,1044 @@
+/* =========================================================
+   Matverket Bodø
+   Tofarget system: grønt blekk, salviepapir. Ingen aksentfarge –
+   bildene av maten leverer all øvrig farge.
+   ========================================================= */
+
+:root{
+  /* ── Farge ──────────────────────────────────────────────
+     Fire flater, én varselfarge, og tre verdier som må være
+     literaler fordi de tegnes utenfor seksjonenes fargearv.
+     Alt annet avledes av currentColor, slik at samme regel
+     virker på både lys og mørk bakgrunn.                    */
+  --blekk:        #04452C;   /* fra logoen */
+  --blekk-dyp:    #04331F;   /* store mørke flater */
+  --salvie:       #DAE5DE;   /* fra kundens eget materiale */
+  --papir:        #FBFAF6;
+  --varsel:       #E8A87C;   /* semantisk: feil i skjema, 6,89:1 mot mørk */
+
+  --felt:         #6F857A;   /* rullefelt – dokumentnivå, arver ingenting */
+  --feltramme:    #668577;   /* 3,46:1 mot mørk grønn – WCAG 1.4.11 */
+  --plassholder:  #89A195;   /* 5,07:1 mot mørk grønn */
+
+  /* Avledede toner. 76 % gir 5,46:1 på papir, 4,77:1 på salvie
+     og 6,87:1 på mørk grønn – AA på alle tre med én verdi. */
+  --dempet-tone:  color-mix(in srgb, currentColor 76%, transparent);
+  --strek-tone:   color-mix(in srgb, currentColor 22%, transparent);
+
+  /* Type */
+  --skrift-tittel: "Fraunces", Georgia, "Times New Roman", serif;
+  --skrift-brod:   "Karla", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* Rom – romslig skala */
+  --rom-1: 8px;
+  --rom-2: 16px;
+  --rom-3: 24px;
+  --rom-4: 40px;
+  --rom-5: 64px;
+  --rom-6: 96px;
+  --rom-7: 128px;
+
+  --omslag: 1180px;
+  --marg: clamp(20px, 5vw, 48px);
+
+  --rundet: 2px;
+  --fart: 220ms;
+  --kurve: cubic-bezier(.2,.7,.3,1);
+}
+
+/* ---------- Grunnmur ---------- */
+
+*,*::before,*::after{ box-sizing:border-box; }
+
+html{
+  -webkit-text-size-adjust:100%;
+  scroll-behavior:smooth;
+  /* Ankerhopp stopper 2 px inn under den faste toppmenyen. Uten den
+     marginen kan avrunding etterlate en stripe av forrige seksjon i
+     glipen mellom menyens underkant og seksjonens topp. */
+  scroll-padding-top:calc(var(--topp-hoyde, 80px) - 2px);
+
+  /* Tynt rullefelt i merkefargene. --felt er valgt fordi den holder 3:1
+     mot papir, salvie og mørk grønn — feltet passerer alle tre. */
+  scrollbar-width:thin;                          /* Firefox */
+  scrollbar-color:var(--felt) transparent;
+}
+
+/* Chrome, Safari, Edge. Sporet er 11 px for et behagelig treffområde,
+   mens den gjennomsiktige rammen gjør selve streken 5 px. */
+html::-webkit-scrollbar{ width:11px; }
+html::-webkit-scrollbar-track{ background:transparent; }
+html::-webkit-scrollbar-thumb{
+  background-color:var(--felt);
+  background-clip:content-box;
+  border:3px solid transparent;
+  border-radius:11px;
+}
+html::-webkit-scrollbar-thumb:hover{ border-width:2px; }
+
+body{
+  margin:0;
+  background:var(--papir);
+  color:var(--blekk);
+  font-family:var(--skrift-brod);
+  font-size:1.0625rem;
+  line-height:1.7;
+  font-weight:400;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+img{ max-width:100%; height:auto; display:block; }
+
+a{ color:inherit; }
+
+h1,h2,h3{
+  font-family:var(--skrift-tittel);
+  font-weight:500;
+  line-height:1.06;
+  letter-spacing:-.015em;
+  margin:0;
+  font-variation-settings:"SOFT" 24, "WONK" 0;
+}
+
+p{ margin:0; }
+ul{ margin:0; padding:0; list-style:none; }
+figure{ margin:0; }   /* nettleserens standard er 1em 40px */
+
+:focus-visible{
+  outline:2px solid var(--blekk);
+  outline-offset:3px;
+  border-radius:1px;
+}
+.seksjon--mork :focus-visible,
+.bunn :focus-visible{ outline-color:var(--salvie); }
+
+.kun-skjermleser{
+  position:absolute; width:1px; height:1px;
+  padding:0; margin:-1px; overflow:hidden;
+  clip:rect(0 0 0 0); white-space:nowrap; border:0;
+}
+
+.hopp-lenke{
+  position:absolute; left:var(--marg); top:-100px; z-index:100;
+  background:var(--blekk); color:var(--papir);
+  padding:12px 20px; text-decoration:none; font-size:.9rem;
+  transition:top var(--fart) var(--kurve);
+}
+.hopp-lenke:focus{ top:12px; }
+
+/* ---------- Bærende layout ---------- */
+
+.omslag{
+  width:100%;
+  max-width:var(--omslag);
+  margin-inline:auto;
+  padding-inline:var(--marg);
+}
+
+/* Hver seksjon er minst like høy som skjermen under toppmenyen, pluss
+   fire piksler slik at nabo­seksjonen aldri titter fram i kanten. Innholdet
+   sentreres, så bufferen ligger i luften og skjuler ingenting.
+   Høyden må komme fra vinduet, ikke fra finjustert luft. */
+.seksjon,
+.seksjon--delt{
+  min-height:calc(100svh - var(--topp-hoyde, 80px) + 4px);
+}
+
+/* .seksjon sentrerer innholdet loddrett. .seksjon--delt er et rutenett
+   fra før og sentrerer via align-items – den skal ikke gjøres om til flex. */
+.seksjon{
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding-block:clamp(52px, 6vw, 76px);
+}
+.seksjon--mork{ padding-block:clamp(40px, 4.5vw, 56px); }
+.seksjon--salvie{ background:var(--salvie); }
+.seksjon--mork{ background:var(--blekk-dyp); color:var(--salvie); }
+
+/* ---------- Typografi ---------- */
+
+.merkelapp{
+  font-size:.75rem;
+  font-weight:600;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--dempet-tone);
+  margin-bottom:var(--rom-3);
+}
+
+.tittel{
+  font-size:clamp(2rem, 4.4vw, 3.1rem);
+  max-width:16ch;
+  margin-bottom:var(--rom-3);
+}
+.tittel--midt{ margin-inline:auto; text-align:center; max-width:20ch; }
+
+.brodtekst{ max-width:58ch; }
+.brodtekst p + p{ margin-top:var(--rom-2); }
+
+/* Åpningssetning, satt større som inngang til resten av avsnittet */
+.inngang{
+  font-size:clamp(1.15rem, 1.7vw, 1.35rem);
+  line-height:1.5;
+  max-width:34ch;
+}
+.brodtekst .inngang + p{ margin-top:var(--rom-3); }
+
+.handling{ margin-top:var(--rom-4); }
+/* Kursseksjonen er midtstilt, så lenken der skal sentreres */
+.handling--midt{ text-align:center; margin-top:clamp(16px, 2.2vw, 26px); }
+
+.lenke-understrek{
+  position:relative;
+  display:inline-block;
+  font-weight:500;
+  text-decoration:none;
+  padding:10px 0 4px;
+  border-bottom:1px solid var(--strek-tone);
+}
+/* Understreken tegnes fra venstre i stedet for å skifte farge */
+.lenke-understrek::after{
+  content:"";
+  position:absolute; left:0; right:0; bottom:-1px;
+  height:1px;
+  background:currentColor;
+  transform:scaleX(0);
+  transform-origin:left;
+  transition:transform 340ms var(--kurve);
+}
+.lenke-understrek:hover::after,
+.lenke-understrek:focus-visible::after{ transform:scaleX(1); }
+
+/* ---------- Topplinje ---------- */
+
+.topp{
+  position:sticky; top:0; z-index:50;
+  background:var(--papir);
+  transition:box-shadow var(--fart) var(--kurve), background var(--fart) var(--kurve);
+}
+.topp[data-festet]{ box-shadow:0 1px 0 var(--strek-tone); }
+.topp[data-festet] .merke__logo{ transform:scale(.88); }
+
+.topp__inner{
+  max-width:var(--omslag);
+  margin-inline:auto;
+  padding:var(--rom-2) var(--marg);
+  display:flex; align-items:center; justify-content:space-between;
+  gap:var(--rom-3);
+}
+
+.merke{
+  display:flex; align-items:center;
+  min-height:44px;
+  text-decoration:none;
+}
+
+/* Ferdig innfargede PNG-er, ikke CSS-maske. Masken var det sårbare leddet
+   og forsvant i enkelte nettlesere. To filer koster 30 KB ekstra og virker
+   overalt, også når siden åpnes rett fra disk. */
+.merke__logo{
+  display:block;
+  width:clamp(126px, 16vw, 158px);
+  height:auto;
+  transform-origin:left center;
+  transition:transform 320ms var(--kurve);
+}
+.merke__logo--lys{ width:clamp(140px, 18vw, 170px); }
+
+.hovedmeny__liste{
+  display:flex; align-items:center; gap:clamp(18px, 2.6vw, 34px);
+  font-size:.95rem;
+}
+.hovedmeny__liste a{
+  position:relative;
+  text-decoration:none;
+  padding:6px 0;
+}
+.hovedmeny__liste a:not(.hovedmeny__kontakt)::after{
+  content:"";
+  position:absolute; left:0; right:0; bottom:0;
+  height:1px;
+  background:currentColor;
+  transform:scaleX(0);
+  transform-origin:left;
+  transition:transform 300ms var(--kurve);
+}
+.hovedmeny__liste a:not(.hovedmeny__kontakt):hover::after{ transform:scaleX(1); }
+
+.hovedmeny__kontakt{
+  border:1px solid var(--blekk) !important;
+  border-radius:var(--rundet);
+  padding:8px 18px !important;
+  transition:background var(--fart) var(--kurve), color var(--fart) var(--kurve),
+             transform 120ms var(--kurve);
+}
+.hovedmeny__kontakt:hover{ background:var(--blekk); color:var(--papir); }
+.hovedmeny__kontakt:active{ transform:scale(.97); }
+
+/* Menyknapp – kun mobil */
+.menyknapp{
+  display:none;
+  position:relative;
+  width:44px; height:44px;
+  padding:0; margin:0;
+  background:none; border:0; cursor:pointer;
+  color:var(--blekk);
+}
+.menyknapp__strek,
+.menyknapp__strek::before,
+.menyknapp__strek::after{
+  position:absolute; left:11px;
+  width:22px; height:1.5px;
+  background:currentColor;
+  transition:transform var(--fart) var(--kurve), opacity var(--fart) var(--kurve);
+}
+.menyknapp__strek{ top:21px; }
+.menyknapp__strek::before{ content:""; left:0; top:-7px; }
+.menyknapp__strek::after{ content:""; left:0; top:7px; }
+
+.menyknapp[aria-expanded="true"] .menyknapp__strek{ transform:rotate(45deg); }
+.menyknapp[aria-expanded="true"] .menyknapp__strek::before{ transform:translateY(7px) rotate(-90deg); }
+.menyknapp[aria-expanded="true"] .menyknapp__strek::after{ opacity:0; }
+
+/* ---------- Kornaksnavigasjon i venstre marg ---------- */
+
+.stilk{
+  position:fixed;
+  left:10px; top:50%;
+  transform:translateY(-50%);
+  z-index:40;
+  display:none;
+  flex-direction:column;
+  align-items:center;
+  gap:13px;
+  padding:10px 0;
+}
+/* Stengelen stikker like langt forbi SISTE blads feste som den stikker
+   forbi FØRSTE blads feste. Bladene er festet i BUNNEN av boksene sine
+   og vokser oppover, så symmetriske senter-verdier – som så ryddige ut
+   i koden – endte 11px over det øverste festet, men 11px FØR det
+   nederste. Skriptet måler hvor på stengelen bladene faktisk sitter,
+   så lengden her er ren form; markeringen følger med av seg selv.
+   21px = feste (10px padding + 22px boks) − 11px overheng;
+   −1px = 182px stilkhøyde − (172px siste feste + 11px overheng). */
+.stilk__stengel{
+  position:absolute;
+  top:21px; bottom:-1px; left:50%;
+  width:1px;
+  background:var(--strek-tone);
+  transform:translateX(-50%);
+}
+/* Fremdriftslinje: fylles nedover mens du scroller */
+.stilk__stengel::after{
+  content:"";
+  position:absolute; inset:0;
+  background:var(--blekk);
+  transform-origin:top;
+  transform:scaleY(var(--fremdrift, 0));
+}
+.stilk__blad{
+  position:relative;
+  display:flex; align-items:flex-end; justify-content:center;
+  width:26px; height:22px;
+  text-decoration:none;
+}
+/* Faste verdier, ikke tokens: color-mix() med currentColor kollapser til
+   gjennomsiktig når den brukes som fill på SVG. Samme grunn som at
+   rullefeltet må ha literaler. */
+.stilk__blad svg{
+  width:8px; height:18px;
+  transform-origin:50% 100%;
+  fill:#BCCCC2;
+  transition:fill var(--fart) var(--kurve), transform var(--fart) var(--kurve);
+}
+.stilk__blad:nth-child(odd)  svg{ transform:rotate(-34deg); }
+.stilk__blad:nth-child(even) svg{ transform:rotate(34deg); }
+
+.stilk__blad:hover svg{ fill:#7E9187; }
+.stilk__blad[aria-current="true"] svg{ fill:#04452C; }
+
+/* Bladet for gjeldende seksjon vokser fra festet, som om det slår ut */
+.stilk__blad:nth-child(odd):hover  svg,
+.stilk__blad:nth-child(odd)[aria-current="true"]  svg{ transform:rotate(-34deg) scale(1.22); }
+.stilk__blad:nth-child(even):hover svg,
+.stilk__blad:nth-child(even)[aria-current="true"] svg{ transform:rotate(34deg) scale(1.22); }
+
+/* Stilken ligger fast utenfor seksjonene og arver derfor grønt blekk hele
+   veien ned. Over den mørke flaten snus den ved å bytte currentColor —
+   da følger --strek-tone og --dempet-tone etter av seg selv. */
+.stilk[data-mork]{ color:var(--salvie); }
+.stilk[data-mork] .stilk__stengel::after{ background:var(--salvie); }
+.stilk[data-mork] .stilk__blad svg{ fill:#5E7E6F; }         /* 3,13:1 mot mørk */
+.stilk[data-mork] .stilk__blad:hover svg{ fill:#9AB0A5; }
+.stilk[data-mork] .stilk__blad[aria-current="true"] svg{ fill:#DAE5DE; }
+
+/* Vises så snart margen er bred nok til at bladene ikke rører innholdet.
+   Innholdet starter tidligst 48 px inn, så den kompakte plasseringen
+   holder seg klar av det helt ned til 1024 px. */
+@media (min-width:1024px){ .stilk{ display:flex; } }
+
+@media (min-width:1280px){
+  .stilk{ left:26px; gap:14px; }
+  .stilk__blad{ width:36px; height:24px; }
+  .stilk__blad svg{ width:9px; height:20px; }
+  /* 22px = feste (10 + 24) − 12px overheng; −2px = 196 − (186 + 12) */
+  .stilk__stengel{ top:22px; bottom:-2px; }
+}
+
+/* ---------- Hero ---------- */
+
+/* Heroen fyller skjermen minus toppmenyen. svh i stedet for vh, ellers
+   hopper høyden når adresselinjen på mobil trekker seg inn. */
+.hero{
+  min-height:calc(100svh - var(--topp-hoyde, 80px));
+  display:flex;
+  align-items:center;
+  padding-block:clamp(32px, 5vw, 72px);
+}
+.hero__grid{ width:100%; }
+
+.hero__grid{
+  display:grid;
+  gap:clamp(32px, 5vw, var(--rom-5));
+  align-items:center;
+}
+
+.hero__tittel{
+  font-size:clamp(3rem, 9vw, 6rem);
+  font-variation-settings:"SOFT" 30, "WONK" 1;
+  letter-spacing:-.03em;
+  margin-bottom:var(--rom-3);
+}
+
+.hero__ingress{
+  max-width:44ch;
+  font-size:1.125rem;
+  color:var(--dempet-tone);
+}
+
+/* Koldtbordfotoet har samme myke hjørner som bildet i «Om Matverket».
+   Her står det i sitt naturlige 4:3-format; fra 900 px og opp strekkes
+   det i stedet til tekstkolonnens høyde (se regelen lenger ned). */
+.hero__bilde img{
+  width:100%;
+  border-radius:14px;
+}
+
+@media (min-width:900px){
+  .hero__grid{
+    grid-template-columns:1fr .98fr;
+    align-items:stretch;
+  }
+
+  /* Bildet spenner fra overkanten av «CATERING · KURS · BODØ» til
+     grunnlinjen under «håndverket selv.», uansett skjermbredde.
+
+     Tekstkolonnen strekker figuren, men kolonnens boks er litt høyere enn
+     bokstavene: første og siste linje har halvleding over og under seg.
+     Margene trekker inn nøyaktig den luften. Verdiene følger typografien
+     — Karla 12 px i merkelappen og 18 px i ingressen, med sine
+     linjeavstander — ikke fotoet. Bytter du bilde, står de. Endrer du
+     skriftstørrelse eller linjeavstand i de to, må de måles på nytt. */
+  .hero__bilde{ margin-block:4.3px 9.1px; }
+
+  /* Fotoet fyller den strukne høyden og beskjæres heller i bredden enn å
+     låse seg til 4:3 — ellers kan ikke begge kantene treffe teksten. */
+  .hero__bilde img{ height:100%; object-fit:cover; }
+}
+
+/* ---------- Topartet blokk (tekst + bilde) ---------- */
+
+.topartet{
+  display:grid;
+  gap:clamp(32px, 5vw, var(--rom-5));
+  align-items:center;
+}
+@media (min-width:900px){
+  .topartet{ grid-template-columns:1fr .8fr; }
+  .topartet--speil .topartet__tekst{ order:2; }
+  .topartet--speil .topartet__bilde{ order:1; }
+}
+
+.topartet__bilde img{ width:100%; }
+
+/* Bildet i «Om Matverket» får myke hjørner. Maskering ved avdekking
+   ligger på <img>, så radiusen må ligge samme sted for å få effekt. */
+.topartet--speil .topartet__bilde,
+.topartet--speil .topartet__bilde img{ border-radius:14px; }
+
+/* ---------- Delt seksjon: bildet går helt ut i høyre kant ----------
+   Bildet beholder sitt eget format og får bestemme seksjonshøyden.
+   Seksjonen har ingen loddrett luft, så bildet møter topp, bunn og
+   høyre vegg uten at noe beskjæres. */
+
+.seksjon--delt{
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:center;
+}
+
+.delt__tekst{
+  padding-block:clamp(56px, 7vw, 96px);
+  /* Venstrekanten følger samme marg som resten av siden */
+  padding-left:max(var(--marg), calc((100vw - var(--omslag)) / 2 + var(--marg)));
+  padding-right:clamp(28px, 4vw, 64px);
+}
+
+.delt__bilde{ margin:0; display:flex; }
+.delt__bilde img{
+  display:block;
+  width:clamp(300px, 40vw, 545px);
+  height:auto;
+}
+
+@media (max-width:899px){
+  .seksjon--delt{ grid-template-columns:1fr; }
+  .delt__tekst{
+    padding-inline:var(--marg);
+    padding-block:clamp(64px, 10vw, 96px) clamp(28px, 4vw, 40px);
+  }
+  .delt__bilde img{ width:100%; }
+}
+
+
+/* ---------- Kurskort ---------- */
+
+.kurs{
+  display:grid;
+  gap:clamp(24px, 3vw, 32px);
+  margin-top:clamp(22px, 3vw, 30px);
+}
+@media (min-width:640px){ .kurs{ grid-template-columns:1fr 1fr; } }
+@media (min-width:860px){ .kurs{ grid-template-columns:repeat(3,1fr); } }
+
+.kort__bilde{ margin:0 0 var(--rom-2); overflow:hidden; }
+.kort__bilde img{
+  width:100%;
+  aspect-ratio:1/1;
+  object-fit:cover;
+  transition:transform 600ms var(--kurve);
+}
+.kort:hover .kort__bilde img{ transform:scale(1.03); }
+
+.kort__tittel{
+  font-size:1.4rem;
+  line-height:1.2;
+  margin-bottom:var(--rom-1);
+}
+.kort__tekst{
+  color:var(--dempet-tone);
+  font-size:.975rem;
+  max-width:34ch;
+}
+
+/* ---------- Kontakt ---------- */
+
+.kontakt{
+  display:grid;
+  gap:clamp(40px, 6vw, var(--rom-5));
+}
+@media (min-width:900px){
+  .kontakt{ grid-template-columns:.85fr 1fr; gap:clamp(48px, 7vw, 104px); }
+}
+
+.seksjon--mork .brodtekst{ color:var(--dempet-tone); }
+
+.kontaktinfo{
+  margin-top:var(--rom-4);
+  display:grid; gap:var(--rom-2);
+}
+.kontaktinfo li{
+  display:grid;
+  gap:0;
+}
+.kontaktinfo__merke{
+  font-size:.72rem;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--dempet-tone);
+}
+.kontaktinfo a{
+  display:inline-flex; align-items:center;
+  min-height:44px;
+  text-decoration:none;
+  color:var(--salvie);
+  border-bottom:1px solid var(--strek-tone);
+  justify-self:start;
+  transition:border-color var(--fart) var(--kurve);
+}
+.kontaktinfo a:hover{ border-bottom-color:var(--salvie); }
+
+/* ---------- Ikon ---------- */
+
+.ikon{
+  width:1em; height:1em;
+  margin-right:.55em;
+  fill:currentColor;
+  flex:none;
+  position:relative; top:.06em;
+}
+
+/* ---------- Skjema ---------- */
+
+/* Lar nettleseren tegne innebygde kontroller (datovelger m.m.) for mørk flate */
+.skjema{ color-scheme:dark; }
+
+.skjema__rad{ display:grid; gap:4px; margin-bottom:12px; }
+
+.skjema__rad label{
+  font-size:.8rem;
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  color:var(--dempet-tone);
+}
+.pakrevd{ color:var(--salvie); }
+
+.skjema input,
+.skjema textarea{
+  font-family:inherit;
+  font-size:1rem;
+  color:var(--papir);
+  background:transparent;
+  border:1px solid var(--feltramme);
+  border-radius:var(--rundet);
+  padding:13px 14px;
+  width:100%;
+  min-height:46px;
+  transition:border-color var(--fart) var(--kurve), background var(--fart) var(--kurve);
+}
+.skjema textarea{ resize:vertical; line-height:1.6; }
+
+.skjema input::placeholder,
+.skjema textarea::placeholder{ color:var(--plassholder); }
+
+.skjema input:hover,
+.skjema textarea:hover{ border-color:var(--dempet-tone); }
+
+.skjema input:focus,
+.skjema textarea:focus{
+  border-color:var(--salvie);
+  background:rgba(218,229,222,.06);
+  outline:2px solid var(--salvie);
+  outline-offset:2px;
+}
+
+.skjema input[aria-invalid="true"],
+.skjema textarea[aria-invalid="true"]{ border-color:var(--varsel); }
+
+/* Telefonfelt med fast landkode */
+.telefonfelt{
+  display:flex; align-items:stretch;
+  border:1px solid var(--feltramme);
+  border-radius:var(--rundet);
+  transition:border-color var(--fart) var(--kurve), background var(--fart) var(--kurve);
+}
+.telefonfelt:hover{ border-color:var(--dempet-tone); }
+.telefonfelt:focus-within{
+  border-color:var(--salvie);
+  background:rgba(218,229,222,.06);
+  outline:2px solid var(--salvie);
+  outline-offset:2px;
+}
+.telefonfelt__landkode{
+  display:flex; align-items:center;
+  padding:0 12px 0 14px;
+  font-size:1rem;
+  color:var(--dempet-tone);
+  border-right:1px solid var(--feltramme);
+  user-select:none;
+}
+.telefonfelt input{
+  border:0;
+  border-radius:0;
+  padding-left:14px;
+}
+.telefonfelt input:focus{
+  outline:none;
+  background:transparent;
+  border:0;
+}
+
+.skjema__feil{
+  display:block;
+  margin-top:5px;
+  font-size:.85rem;
+  color:var(--varsel);
+  text-transform:none;
+  letter-spacing:0;
+}
+
+@media (min-width:520px){
+  .skjema__par{ display:grid; grid-template-columns:1fr 1fr; gap:var(--rom-3); }
+}
+
+.honningkrukke{
+  position:absolute; left:-9999px;
+  width:1px; height:1px; overflow:hidden;
+}
+
+.knapp{
+  font-family:inherit;
+  font-size:.95rem;
+  font-weight:600;
+  letter-spacing:.02em;
+  color:var(--blekk-dyp);
+  background:var(--salvie);
+  border:1px solid var(--salvie);
+  border-radius:var(--rundet);
+  padding:15px 32px;
+  min-height:48px;
+  cursor:pointer;
+  transition:background var(--fart) var(--kurve), color var(--fart) var(--kurve),
+             opacity var(--fart) var(--kurve), transform 120ms var(--kurve);
+}
+.knapp:hover{ background:var(--papir); border-color:var(--papir); }
+.knapp:active{ transform:scale(.98); }
+.knapp[disabled]{ opacity:.5; cursor:progress; transform:none; }
+
+.skjema__status{
+  margin-top:var(--rom-2);
+  font-size:.95rem;
+  min-height:1.5em;
+}
+.skjema__status[data-tilstand="ok"]{ color:var(--salvie); }
+.skjema__status[data-tilstand="feil"]{ color:var(--varsel); }
+
+/* ---------- Bunn ---------- */
+
+.bunn{
+  background:var(--blekk-dyp);
+  color:var(--salvie);
+  padding-block:var(--rom-5) var(--rom-3);
+  border-top:1px solid var(--strek-tone);
+}
+.bunn__grid{
+  display:grid;
+  gap:var(--rom-4);
+}
+@media (min-width:700px){
+  .bunn__grid{ grid-template-columns:1fr auto; align-items:start; }
+}
+.bunn__linje{
+  margin-top:var(--rom-2);
+  color:var(--dempet-tone);
+  font-size:.95rem;
+  max-width:34ch;
+}
+.bunn__info{
+  display:grid; gap:2px;
+  font-size:.95rem;
+}
+.bunn__info li{ display:flex; align-items:center; min-height:40px; }
+.bunn__info a{
+  display:inline-flex; align-items:center;
+  min-height:40px;
+  text-decoration:none;
+  border-bottom:1px solid transparent;
+  transition:border-color var(--fart) var(--kurve);
+}
+.bunn__info a:hover{ border-bottom-color:var(--salvie); }
+
+.bunn__bunnlinje{
+  max-width:var(--omslag);
+  margin:var(--rom-5) auto 0;
+  padding:var(--rom-3) var(--marg) 0;
+  border-top:1px solid var(--strek-tone);
+  font-size:.82rem;
+  color:var(--dempet-tone);
+}
+
+/* ---------- Avsløring ved scroll ---------- */
+
+/* Tekst toner inn uten å flytte seg. All bevegelse ligger i bildene,
+   som avdekkes nedenfra — som et klede som løftes av et fat. */
+.js [data-avslor]{
+  opacity:0;
+  transition:opacity 620ms var(--kurve);
+}
+.js [data-avslor].er-synlig{ opacity:1; }
+
+/* Bildene toner ikke – de avdekkes. Derfor full opasitet fra start.
+   VIKTIG: masken må ligge på <img>, ikke på <figure>. IntersectionObserver
+   regner skjæring ut fra klippet areal, så en maske på selve elementet
+   som observeres gir null areal — det avsløres da aldri. */
+/* Avdekkingen gjelder fotoene nedover siden. Hero-bildet lastes først
+   og toner bare inn, så åpningen ikke venter på en maskeanimasjon. */
+.js .topartet__bilde,
+.js .delt__bilde{ opacity:1; }
+
+.js .topartet__bilde img,
+.js .delt__bilde img{
+  clip-path:inset(100% 0 0 0);
+  transform:scale(1.05);
+  transition:clip-path 900ms var(--kurve), transform 1100ms var(--kurve);
+}
+.js .topartet__bilde.er-synlig img,
+.js .delt__bilde.er-synlig img{
+  clip-path:inset(0 0 0 0);
+  transform:none;
+}
+
+.topartet__bilde,
+.delt__bilde{ overflow:hidden; }
+.js .topartet__bilde.er-synlig img{ transform:none; }
+
+/* ---------- Mobil ---------- */
+
+@media (max-width:767px){
+  .menyknapp{ display:block; }
+
+  .hovedmeny{
+    position:fixed;
+    inset:0 0 auto 0;
+    top:var(--topp-hoyde, 76px);
+    background:var(--papir);
+    border-top:1px solid var(--strek-tone);
+    padding:var(--rom-3) var(--marg) var(--rom-4);
+    transform:translateY(-8px);
+    opacity:0;
+    visibility:hidden;
+    transition:opacity var(--fart) var(--kurve), transform var(--fart) var(--kurve),
+               visibility var(--fart) var(--kurve);
+  }
+  .hovedmeny[data-apen]{
+    opacity:1; visibility:visible; transform:none;
+    box-shadow:0 18px 40px -18px rgba(4,51,31,.45);
+  }
+  /* Låser bakgrunnen mens menyen er åpen */
+  .meny-apen{ overflow:hidden; }
+  .hovedmeny__liste{
+    flex-direction:column;
+    align-items:stretch;
+    gap:0;
+    font-size:1.15rem;
+  }
+  .hovedmeny__liste li + li{ border-top:1px solid var(--strek-tone); }
+
+  /* Punktene trappes inn etter at panelet har åpnet seg */
+  .hovedmeny__liste li{
+    opacity:0;
+    transform:translateY(-6px);
+    transition:opacity 260ms var(--kurve), transform 260ms var(--kurve);
+  }
+  .hovedmeny[data-apen] .hovedmeny__liste li{ opacity:1; transform:none; }
+  .hovedmeny[data-apen] .hovedmeny__liste li:nth-child(1){ transition-delay:70ms; }
+  .hovedmeny[data-apen] .hovedmeny__liste li:nth-child(2){ transition-delay:112ms; }
+  .hovedmeny[data-apen] .hovedmeny__liste li:nth-child(3){ transition-delay:154ms; }
+  .hovedmeny[data-apen] .hovedmeny__liste li:nth-child(4){ transition-delay:196ms; }
+  .hovedmeny[data-apen] .hovedmeny__liste li:nth-child(5){ transition-delay:238ms; }
+  .hovedmeny__liste a{
+    display:block;
+    padding:16px 0;
+    border-bottom:0;
+  }
+  .hovedmeny__kontakt{
+    border:0 !important;
+    padding:16px 0 !important;
+  }
+  .hovedmeny__kontakt:hover{ background:none; color:inherit; }
+}
+
+/* =========================================================
+   MOBIL
+   Egne avgjørelser for telefon, ikke skrivebordsoppsettet stablet.
+   Alt her ligger i mediespørringer – skrivebordsversjonen er urørt.
+   ========================================================= */
+
+/* ---------- 1. Kurskortene sveipes i stedet for å stables ----------
+   Tre stablede kort var 1613 px, altså to fulle skjermer for tre
+   linjer informasjon. Nå ett kort om gangen, sveipet med tommelen. */
+
+/* Må stå foran mediespørringen: lik spesifisitet, så den siste vinner */
+.kursprikker{ display:none; }
+
+@media (max-width:639px){
+  .kurs{
+    /* Kortbredden må være en absolutt lengde, ikke prosent: prosent
+       regnes mot innholdsboksen, som paddingen under selv krymper.
+       Det gjorde kortet 216 px i stedet for 285, og sentreringen bommet. */
+    --kortbredde:76vw;
+    grid-auto-flow:column;
+    grid-auto-columns:var(--kortbredde);
+    overflow-x:auto;
+    overscroll-behavior-x:contain;
+    scroll-snap-type:x mandatory;
+    /* Halve restbredden i hver ende, så både første og siste kort
+       kan rulles helt til midten. */
+    margin-inline:calc(-1 * var(--marg));
+    padding-inline:calc((100vw - var(--kortbredde)) / 2);
+    scroll-padding-inline:calc((100vw - var(--kortbredde)) / 2);
+    gap:14px;
+    scrollbar-width:none;
+  }
+  .kurs::-webkit-scrollbar{ display:none; }
+  .kort{ scroll-snap-align:center; }
+  .kort__tekst{ max-width:none; }
+
+  /* Bladprikker: sier både at det finnes flere kort og hvor mange */
+  .kursprikker{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:12px;
+    margin-top:20px;
+  }
+  .kursprikker svg{
+    width:7px; height:16px;
+    fill:#BCCCC2;
+    transition:fill var(--fart) var(--kurve), transform var(--fart) var(--kurve);
+  }
+  .kursprikker svg[data-aktiv]{
+    fill:#04452C;
+    transform:scale(1.3);
+  }
+}
+
+/* ---------- 2. Kornaksmerket blir en vannrett fremdriftslinje ----------
+   Den loddrette stilken har ingen plass på telefon, så signaturen
+   forsvant helt. Her ligger den under toppmenyen og viser hvor langt
+   ned på siden man er – mest nyttig nettopp når siden er lang. */
+
+@media (max-width:1023px){
+  /* Skyggen under headeren ville doblet linjas egen kantlinje – de to
+     radene skal lese som én sammenhengende topp. */
+  .topp[data-festet]{ box-shadow:none; }
+
+  /* Nederste rad i den klebrige headeren (se HTML-kommentaren der).
+     Ikke fixed: da ble linja stående igjen når Safari strekker siden
+     forbi toppen eller bunnen, mens resten fulgte gummibåndet.
+     Relative, ikke static – stengelen er absolutt og trenger raden,
+     ikke headeren, som anker. */
+  .stilk{
+    position:relative;
+    inset:auto;
+    display:flex;
+    flex-direction:row;
+    justify-content:space-between;
+    /* Bladene ligger oppå streken, som på den loddrette varianten der
+       stengelen går bak dem. Derfor sentreres de på linja, ikke over.
+       22 px høyde gir plass til 16 px blad ganger 1,25 ved markering. */
+    align-items:center;
+    transform:none;
+    padding:5px var(--marg);
+    gap:0;
+    background:var(--papir);
+    border-bottom:1px solid var(--strek-tone);
+  }
+  /* Vannrett er bladene sentrert PÅ linja, så her går stengelen fra
+     første til siste blads senter – dermed er «full strek» og «strek i
+     siste blads senter» samme punkt. 10px = halve bladboksen (20/2). */
+  .stilk__stengel{
+    left:calc(var(--marg) + 10px); right:calc(var(--marg) + 10px);
+    top:50%; bottom:auto;
+    width:auto; height:1px;
+    transform:translateY(-50%);
+  }
+  .stilk__blad{ height:22px; align-items:center; }
+  /* Skalering om midten, ellers ville bladet skjøvet seg av linja */
+  .stilk__blad svg{ transform-origin:50% 50%; }
+  .stilk__stengel::after{
+    transform-origin:left;
+    transform:scaleX(var(--fremdrift, 0));
+  }
+  .stilk__blad{ width:20px; }
+  .stilk__blad svg{ width:7px; height:16px; }
+  /* Loddrett vippet bladene ut til hver side. Vannrett peker de opp. */
+  .stilk__blad:nth-child(odd) svg,
+  .stilk__blad:nth-child(even) svg{ transform:none; }
+  .stilk__blad:nth-child(odd):hover svg,
+  .stilk__blad:nth-child(even):hover svg,
+  .stilk__blad:nth-child(odd)[aria-current="true"] svg,
+  .stilk__blad:nth-child(even)[aria-current="true"] svg{ transform:scale(1.25); }
+  /* Linja ligger alltid på papir, så mørkvarianten skal ikke slå inn */
+  .stilk[data-mork] .stilk__stengel::after{ background:#04452C; }
+  .stilk[data-mork] .stilk__blad svg{ fill:#BCCCC2; }
+  .stilk[data-mork] .stilk__blad[aria-current="true"] svg{ fill:#04452C; }
+
+  /* Ankerhopp: ingen egen regel her lenger. Linja er en del av headeren,
+     så --topp-hoyde dekker den, og fellesregelen med 2 px tukling
+     gjelder som på skrivebord. */
+}
+
+/* ---------- 3. Bildet først i heroen ----------
+   Før lå merkelapp, tre linjer overskrift og fire linjer brødtekst
+   foran bildet. Maten er det som får merkevaren til å klikke, og
+   koldtbordet trenger full bredde for at fatene skal kunne leses. */
+
+@media (max-width:899px){
+  .hero__bilde{ order:1; }
+  .hero__tekst{ order:2; }
+}
+
+/* ---------- 5. Kontaktinfoen bor bare i bunnteksten ----------
+   Med fast kontaktlinje nederst og full kontaktinfo i bunnen var
+   listen i kontaktseksjonen en tredje gjentakelse av samme opplysninger. */
+
+@media (max-width:767px){
+  .kontaktinfo{ display:none; }
+}
+
+/* ---------- 6. Catering-bildet halvert i høyden ---------- */
+
+@media (max-width:899px){
+  .delt__bilde img{
+    aspect-ratio:375/258;
+    object-fit:cover;
+    height:auto;
+  }
+}
+
+/* ---------- 4. Fast kontaktlinje nederst ---------- */
+
+.ringlinje{ display:none; }
+
+@media (max-width:767px){
+  .ringlinje{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    z-index:60;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    background:var(--blekk-dyp);
+    color:var(--salvie);
+    padding-bottom:env(safe-area-inset-bottom, 0px);
+  }
+  .ringlinje a{
+    display:flex; align-items:center; justify-content:center;
+    gap:.5em;
+    min-height:54px;
+    text-decoration:none;
+    font-size:.95rem;
+    font-weight:500;
+    transition:background var(--fart) var(--kurve);
+  }
+  .ringlinje a:active{ background:rgba(218,229,222,.12); }
+  .ringlinje a + a{ border-left:1px solid var(--strek-tone); }
+  .ringlinje .ikon{ margin-right:0; }
+
+  /* Bunnteksten må ikke havne under linja */
+  .bunn{
+    padding-bottom:calc(54px + env(safe-area-inset-bottom, 0px) + var(--rom-3));
+  }
+}
+
+/* ---------- Redusert bevegelse ---------- */
+
+@media (prefers-reduced-motion:reduce){
+  html{ scroll-behavior:auto; }
+  *,*::before,*::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+    transition-delay:0ms !important;
+  }
+  /* Alt vises ferdig avdekket – ingen maske, ingen forskyvning */
+  .js [data-avslor]{ opacity:1; }
+  .js .topartet__bilde img,
+  .js .kort__bilde img{ clip-path:none; transform:none; }
+  .js .hovedmeny__liste li{ opacity:1; transform:none; }
+  .stilk__stengel::after{ display:none; }
+  .knapp:active,
+  .hovedmeny__kontakt:active{ transform:none; }
+}
