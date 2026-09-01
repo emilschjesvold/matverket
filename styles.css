@@ -35,8 +35,6 @@
   --rom-3: 24px;
   --rom-4: 40px;
   --rom-5: 64px;
-  --rom-6: 96px;
-  --rom-7: 128px;
 
   --omslag: 1180px;
   --marg: clamp(20px, 5vw, 48px);
@@ -216,7 +214,7 @@ figure{ margin:0; }   /* nettleserens standard er 1em 40px */
 .topp{
   position:sticky; top:0; z-index:50;
   background:var(--papir);
-  transition:box-shadow var(--fart) var(--kurve), background var(--fart) var(--kurve);
+  transition:box-shadow var(--fart) var(--kurve);
 }
 .topp[data-festet]{ box-shadow:0 1px 0 var(--strek-tone); }
 .topp[data-festet] .merke__logo{ transform:scale(.88); }
@@ -397,12 +395,9 @@ figure{ margin:0; }   /* nettleserens standard er 1em 40px */
   align-items:center;
   padding-block:clamp(32px, 5vw, 72px);
 }
-.hero__grid{ width:100%; }
-
 .hero__grid{
   display:grid;
   gap:clamp(32px, 5vw, var(--rom-5));
-  align-items:center;
 }
 
 .hero__tittel{
@@ -652,21 +647,16 @@ figure{ margin:0; }   /* nettleserens standard er 1em 40px */
 .telefonfelt input{
   border:0;
   border-radius:0;
-  padding-left:14px;
 }
 .telefonfelt input:focus{
   outline:none;
   background:transparent;
-  border:0;
 }
 
 .skjema__feil{
-  display:block;
   margin-top:5px;
   font-size:.85rem;
   color:var(--varsel);
-  text-transform:none;
-  letter-spacing:0;
 }
 
 @media (min-width:520px){
@@ -690,7 +680,7 @@ figure{ margin:0; }   /* nettleserens standard er 1em 40px */
   padding:15px 32px;
   min-height:48px;
   cursor:pointer;
-  transition:background var(--fart) var(--kurve), color var(--fart) var(--kurve),
+  transition:background var(--fart) var(--kurve),
              opacity var(--fart) var(--kurve), transform 120ms var(--kurve);
 }
 .knapp:hover{ background:var(--papir); border-color:var(--papir); }
@@ -782,7 +772,6 @@ figure{ margin:0; }   /* nettleserens standard er 1em 40px */
 
 .topartet__bilde,
 .delt__bilde{ overflow:hidden; }
-.js .topartet__bilde.er-synlig img{ transform:none; }
 
 /* ---------- Mobil ---------- */
 
@@ -831,7 +820,6 @@ figure{ margin:0; }   /* nettleserens standard er 1em 40px */
   .hovedmeny__liste a{
     display:block;
     padding:16px 0;
-    border-bottom:0;
   }
   .hovedmeny__kontakt{
     border:0 !important;
@@ -916,10 +904,6 @@ figure{ margin:0; }   /* nettleserens standard er 1em 40px */
     display:flex;
     flex-direction:row;
     justify-content:space-between;
-    /* Bladene ligger oppå streken, som på den loddrette varianten der
-       stengelen går bak dem. Derfor sentreres de på linja, ikke over.
-       22 px høyde gir plass til 16 px blad ganger 1,25 ved markering. */
-    align-items:center;
     transform:none;
     padding:5px var(--marg);
     gap:0;
@@ -935,7 +919,10 @@ figure{ margin:0; }   /* nettleserens standard er 1em 40px */
     width:auto; height:1px;
     transform:translateY(-50%);
   }
-  .stilk__blad{ height:22px; align-items:center; }
+  /* Bladene ligger oppå streken, som på den loddrette varianten der
+     stengelen går bak dem. Derfor sentreres de på linja, ikke over.
+     22 px høyde gir plass til 16 px blad ganger 1,25 ved markering. */
+  .stilk__blad{ align-items:center; }
   /* Skalering om midten, ellers ville bladet skjøvet seg av linja */
   .stilk__blad svg{ transform-origin:50% 50%; }
   .stilk__stengel::after{
@@ -951,9 +938,14 @@ figure{ margin:0; }   /* nettleserens standard er 1em 40px */
   .stilk__blad:nth-child(even):hover svg,
   .stilk__blad:nth-child(odd)[aria-current="true"] svg,
   .stilk__blad:nth-child(even)[aria-current="true"] svg{ transform:scale(1.25); }
-  /* Linja ligger alltid på papir, så mørkvarianten skal ikke slå inn */
+  /* Linja ligger alltid på papir, så mørkvarianten skal ikke slå inn.
+     Skriptet setter data-mork på alle bredder, så alt den endrer må
+     nulles her – også currentColor, som --strek-tone i sporet og
+     kantlinjen under avledes av. */
+  .stilk[data-mork]{ color:inherit; }
   .stilk[data-mork] .stilk__stengel::after{ background:#04452C; }
   .stilk[data-mork] .stilk__blad svg{ fill:#BCCCC2; }
+  .stilk[data-mork] .stilk__blad:hover svg{ fill:#7E9187; }
   .stilk[data-mork] .stilk__blad[aria-current="true"] svg{ fill:#04452C; }
 
   /* Ankerhopp: ingen egen regel her lenger. Linja er en del av headeren,
@@ -985,7 +977,6 @@ figure{ margin:0; }   /* nettleserens standard er 1em 40px */
   .delt__bilde img{
     aspect-ratio:375/258;
     object-fit:cover;
-    height:auto;
   }
 }
 
@@ -1036,7 +1027,7 @@ figure{ margin:0; }   /* nettleserens standard er 1em 40px */
   /* Alt vises ferdig avdekket – ingen maske, ingen forskyvning */
   .js [data-avslor]{ opacity:1; }
   .js .topartet__bilde img,
-  .js .kort__bilde img{ clip-path:none; transform:none; }
+  .js .delt__bilde img{ clip-path:none; transform:none; }
   .js .hovedmeny__liste li{ opacity:1; transform:none; }
   .stilk__stengel::after{ display:none; }
   .knapp:active,

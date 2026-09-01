@@ -8,6 +8,45 @@ document.documentElement.classList.add('js');
 
 const roligBevegelse = window.matchMedia('(prefers-reduced-motion: reduce)');
 
+// Safari før 14 har bare addListener på MediaQueryList. Uten denne ville
+// skriptet stoppet midt i, etter at js-klassen var satt – og da ble alt
+// som venter på avsløring stående usynlig.
+const vedEndring = (mql, fn) => {
+  if ('addEventListener' in mql) mql.addEventListener('change', fn);
+  else mql.addListener(fn);
+};
+
+/* ---------- Ankernavigasjon uten anker i adressen ----------
+   Klikk på ankerlenker scrolles med JS i stedet for fragmentnavigasjon,
+   så adressen aldri får et anker hengende: da ville refresh hoppe til
+   seksjonen i stedet for å bli der man er, og hvert klikk fylle
+   historikken med en ekstra oppføring. Å la nettleseren hoppe og vaske
+   adressen etterpå går ikke – en history-endring midt i animasjonen
+   avbryter smooth scroll i Chromium.
+   scrollIntoView følger CSS-ens scroll-behavior og scroll-padding, så
+   landingen blir identisk med et ekte ankerhopp. Hopp-lenka unntas:
+   fokusflyttingen dens skal skje helt som før. */
+
+(function ankernavigasjon(){
+  document.addEventListener('click', (e) => {
+    const lenke = e.target.closest('a[href^="#"]');
+    if (!lenke || lenke.classList.contains('hopp-lenke')) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const mal = document.getElementById(lenke.hash.slice(1));
+    if (!mal) return;
+    e.preventDefault();
+    mal.scrollIntoView({ block: 'start' });
+  });
+
+  // Ankomst med anker utenfra får hoppe som normalt, men ankeret
+  // vaskes etter lasting så en refresh blir der man er
+  if (location.hash) {
+    window.addEventListener('load', () => {
+      history.replaceState(null, '', location.pathname + location.search);
+    });
+  }
+})();
+
 /* ---------- Topplinje ---------- */
 
 (function topplinje(){
@@ -67,7 +106,7 @@ const roligBevegelse = window.matchMedia('(prefers-reduced-motion: reduce)');
   });
 
   // Lukk hvis vinduet vokser forbi mobilbruddpunktet
-  window.matchMedia('(min-width: 768px)').addEventListener('change', (e) => {
+  vedEndring(window.matchMedia('(min-width: 768px)'), (e) => {
     if (e.matches) lukk();
   });
 })();
@@ -252,7 +291,7 @@ const roligBevegelse = window.matchMedia('(prefers-reduced-motion: reduce)');
   };
 
   still();
-  smal.addEventListener('change', still);
+  vedEndring(smal, still);
 
   // Bladprikkene følger hvilket kort som står framme
   const prikker = [...document.querySelectorAll('.kursprikker svg')];

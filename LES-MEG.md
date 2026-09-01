@@ -9,7 +9,7 @@ i en nettleser, eller last hele mappen opp til et webhotell.
 index.html      All markup og tekst
 styles.css      Design og layout
 script.js       Meny, scroll-avsløring, kornaksnavigasjon, skjema
-images/         Nettoptimaliserte bilder + logomaske og favicon
+images/         Nettoptimaliserte bilder, to logofiler og favicon
 ```
 
 Originalbildene ligger urørt i `~/Downloads/Matverket/`. Bildene i `images/`
@@ -73,7 +73,10 @@ sips -Z 560 nytt.png --out images/nytt-sm.jpg -s format jpeg -s formatOptions 62
 ### Legge til et kurskort
 
 Kopier en hel `<li class="kort">` i kurs-seksjonen og bytt bilde, tittel og
-tekst. Rutenettet håndterer fire kort like godt som tre.
+tekst. Legg også til en `<svg><use href="#blad"/></svg>` i `kursprikker`
+rett under – det er én prikk per kort i sveipefeltet på telefon. På
+skrivebord er rutenettet tre i bredden, så et fjerde kort havner alene på
+rad to.
 
 ## Design
 
